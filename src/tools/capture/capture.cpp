@@ -1,5 +1,5 @@
 #include <boost/program_options.hpp>
-#include "KinectCapture.h"
+#include "tools/capture/KinectCapture.h"
 #include <iostream>
 
 namespace po = boost::program_options;
