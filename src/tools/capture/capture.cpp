@@ -14,19 +14,23 @@ bool processCommandLine(int argc, char** argv, KinectCapture::Options & options)
 		("help",
 			"Show help message and exit")
 		("res", po::value<int>(&res),
-		 	"The resolution, specified as a width in pixels. "
+			"The resolution, specified as a width in pixels. "
 			"May be 320, 640 or 1280.")
 		("mode", po::value<std::string>(&mode),
-		 	"The capture mode, which may be:\n"
+			"The capture mode, which may be:\n"
 			"rgb: Bayer data converted to RGB by libfreenect.\n"
 			"bayer: Raw bayer data, stored as DNG.\n"
 			"ir8: IR data saved as 8-bit greyscale.\n"
 			"ir10: IR data saved in 10-bit packed form.\n"
 			"ir16: IR data zero-padded to 16 bits per sample." )
 		("ir-brightness", po::value<int>(&options.brightness),
-		 	"The output power of the IR projector, between 0 and 50.")
+			"The output power of the IR projector, between 0 and 50.")
 		("output,o", po::value<std::string>(&options.fileName),
-		 	"The output filename. Please give it a .tif or .dng extension.")
+			"The output filename. Please give it a .tif or .dng extension.")
+		("frames,f", po::value<int>(&options.frames),
+			"The number of frames to capture.")
+		("skip", po::value<int>(&options.skip),
+			"The number of frames to skip at the start of the stream.")
 		;
 
 	po::variables_map vm;

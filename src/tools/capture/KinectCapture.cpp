@@ -1,10 +1,15 @@
 #include "KinectCapture.h"
-#include <tiffio.h>
 #include <iostream>
 
 namespace Speckle {
 
 bool KinectCapture::capture() {
+	m_tif = TIFFOpen(m_options.fileName.c_str(), "w");
+	if (!m_tif) {
+		std::cerr << "Unable to open output file\n";
+		return false;
+	}
+
 	freenect_context *f_ctx;
 	freenect_device *f_dev;
 
@@ -45,6 +50,8 @@ bool KinectCapture::capture() {
 	freenect_close_device(f_dev);
 	freenect_shutdown(f_ctx);
 
+	TIFFClose(m_tif);
+
 	return m_success;
 }
 
@@ -67,41 +74,30 @@ void KinectCapture::VideoCallback(freenect_device *dev, void *data, uint32_t tim
 }
 
 void KinectCapture::processFrame(freenect_device *dev, void *data, uint32_t timestamp) {
-	// Discard first frame
-	// The first frame in high-resolution mode contains garbage. It is usually
-	// discarded anyway due to a second bug (the frame is slightly too large),
-	// but we'll take the frame after that in case that bug is ever fixed.
-	if (m_frameIndex++ < 1) {
-		return;
-	}
-
-	m_done = true;
-
-	TIFF *tif = TIFFOpen(m_options.fileName.c_str(), "w");
-	if (!tif) {
-		std::cerr << "Unable to open output file\n";
+	std::cerr << "Frame " << m_frameIndex << std::endl;
+	if (m_frameIndex++ < m_options.skip) {
 		return;
 	}
 
 	freenect_frame_mode frameMode = freenect_get_current_video_mode(dev);
-	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, frameMode.width);
-	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, frameMode.height);
+	TIFFSetField(m_tif, TIFFTAG_IMAGEWIDTH, frameMode.width);
+	TIFFSetField(m_tif, TIFFTAG_IMAGELENGTH, frameMode.height);
 
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, frameMode.height);
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
-	TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
-	TIFFSetField(tif, TIFFTAG_XRESOLUTION, 1.0);
-	TIFFSetField(tif, TIFFTAG_YRESOLUTION, 1.0);
+	TIFFSetField(m_tif, TIFFTAG_ROWSPERSTRIP, frameMode.height);
+	TIFFSetField(m_tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	TIFFSetField(m_tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+	TIFFSetField(m_tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
+	TIFFSetField(m_tif, TIFFTAG_XRESOLUTION, 1.0);
+	TIFFSetField(m_tif, TIFFTAG_YRESOLUTION, 1.0);
 
 	size_t bitsPerPixel;
 
 	switch (m_options.mode) {
 		case FREENECT_VIDEO_RGB:
-			TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-			TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
-			TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
-			TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+			TIFFSetField(m_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+			TIFFSetField(m_tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+			TIFFSetField(m_tif, TIFFTAG_BITSPERSAMPLE, 8);
+			TIFFSetField(m_tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 			bitsPerPixel = 24;
 			break;
 		case FREENECT_VIDEO_BAYER:
@@ -109,65 +105,77 @@ void KinectCapture::processFrame(freenect_device *dev, void *data, uint32_t time
 			// but we do most other things correctly. These files can be read by
 			// ufraw.
 			static uint8_t version[] = {1, 4, 0, 0};
-			TIFFSetField(tif, TIFFTAG_DNGVERSION, version);
-			TIFFSetField(tif, TIFFTAG_SUBFILETYPE, 0);
-			TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_CFA);
-			TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-			TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+			TIFFSetField(m_tif, TIFFTAG_DNGVERSION, version);
+			TIFFSetField(m_tif, TIFFTAG_SUBFILETYPE, 0);
+			TIFFSetField(m_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_CFA);
+			TIFFSetField(m_tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+			TIFFSetField(m_tif, TIFFTAG_BITSPERSAMPLE, 8);
 
 			// DNG does not allow LZW compression
-			TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+			TIFFSetField(m_tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 
 			static uint16_t patternDim[] = {2, 2};
-			TIFFSetField(tif, TIFFTAG_CFAREPEATPATTERNDIM, patternDim);
+			TIFFSetField(m_tif, TIFFTAG_CFAREPEATPATTERNDIM, patternDim);
 			static uint8_t pattern[] = {1, 0, 2, 1};
-			TIFFSetField(tif, TIFFTAG_CFAPATTERN, pattern);
+			TIFFSetField(m_tif, TIFFTAG_CFAPATTERN, pattern);
 			bitsPerPixel = 8;
 			break;
 		case FREENECT_VIDEO_IR_8BIT:
-			TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-			TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-			TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
-			TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+			TIFFSetField(m_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+			TIFFSetField(m_tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+			TIFFSetField(m_tif, TIFFTAG_BITSPERSAMPLE, 8);
+			TIFFSetField(m_tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 			bitsPerPixel = 8;
 			break;
 		case FREENECT_VIDEO_IR_10BIT_PACKED:
-			TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-			TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-			TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 10);
+			TIFFSetField(m_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+			TIFFSetField(m_tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+			TIFFSetField(m_tif, TIFFTAG_BITSPERSAMPLE, 10);
 
 			// LZW is not helpful for this format
-			TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+			TIFFSetField(m_tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 
 			bitsPerPixel = 10;
 			break;
 		case FREENECT_VIDEO_IR_10BIT:
-			TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-			TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-			TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 16);
-			TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+			TIFFSetField(m_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+			TIFFSetField(m_tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+			TIFFSetField(m_tif, TIFFTAG_BITSPERSAMPLE, 16);
+			TIFFSetField(m_tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 			bitsPerPixel = 16;
 			break;
 		default:
 			std::cerr << "Invalid mode\n";
-			TIFFClose(tif);
+			m_done = true;
 			return;
 	}
 
-	TIFFSetField(tif, TIFFTAG_MAKE, "Microsoft");
-	TIFFSetField(tif, TIFFTAG_MODEL, "Kinect");
-	TIFFSetField(tif, TIFFTAG_SOFTWARE, "libspeckle");
+	TIFFSetField(m_tif, TIFFTAG_MAKE, "Microsoft");
+	TIFFSetField(m_tif, TIFFTAG_MODEL, "Kinect");
+	TIFFSetField(m_tif, TIFFTAG_SOFTWARE, "libspeckle");
+
+	if (m_options.frames > 1) {
+		TIFFSetField(m_tif, TIFFTAG_PAGENUMBER, m_frameIndex - m_options.skip, 0);
+		TIFFSetField(m_tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
+	}
 
 	size_t size = bitsPerPixel * frameMode.width * frameMode.height / 8;
 
-	if (TIFFWriteEncodedStrip(tif, 0, data, size) < 0) {
-		TIFFClose(tif);
+	if (TIFFWriteEncodedStrip(m_tif, 0, data, size) < 0) {
+		std::cerr << "Error writing encoded strip\n";
+		m_done = true;
+		return;
+	}
+	if (TIFFWriteDirectory(m_tif) == 0) {
+		std::cerr << "Error writing directory\n";
+		m_done = true;
 		return;
 	}
 
-	TIFFClose(tif);
-
-	m_success = true;
+	if (m_frameIndex >= m_options.frames + m_options.skip) {
+		m_success = true;
+		m_done = true;
+	}
 }
 
 } // namespace
