@@ -17,9 +17,9 @@ public:
 			: width(0), height(0), bitsPerPixel(0),
 			spatialWindow(7),
 			correlationTableSize(1024),
-			baselineCorrelationTime(1.0),
+			beta(1.0),
 			frameSize(0),
-			alpha(1.0)
+			minX(30)
 		{}
 			
 		int width;
@@ -27,14 +27,14 @@ public:
 		int bitsPerPixel;
 		int spatialWindow;
 		int correlationTableSize;
-		double baselineCorrelationTime;
+		double beta;
 		size_t frameSize;
-		double alpha;
+		double minX;
 	};
 
-	ComputePipeline(const Options & options, Mat3b & output);
+	ComputePipeline(const Options & options);
 
-	void writeFrame(void *data, size_t length);
+	void writeFrame(void *data, size_t length, cv::Mat & output, int format);
 private:
 	Options m_options;
 

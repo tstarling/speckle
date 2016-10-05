@@ -26,10 +26,10 @@ bool processCommandLine(int argc, char** argv,
 		 	"Spatial window size, should be an odd number of pixels (default 7)")
 		("correlation-table-size", po::value<int>(&options.correlationTableSize),
 		 	"Table size used for solving the correlation time equation (default 1024)")
-		("baseline", po::value<double>(&options.baselineCorrelationTime),
-		 	"Baseline correlation time")
-		("alpha", po::value<double>(&options.alpha),
-		 	"Blend speckle visualization with source image with this opacity value (default 1)")
+		("beta", po::value<double>(&options.beta),
+		 	"Speckle contrast correction factor")
+		("scale", po::value<double>(&options.minX),
+		 	"Minimum correlation time as a proportion of exposure time, for visualization")
 		;
 
 	po::options_description invisible;
@@ -126,10 +126,10 @@ int main(int argc, char **argv) {
 	options.bitsPerPixel = bitsPerSample;
 	options.frameSize = height * width * bitsPerSample / 8;
 
-	Mat3b result;
+	cv::Mat result;
 
-	ComputePipeline compute(options, result);
-	compute.writeFrame(&(buffer[0]), options.frameSize);
+	ComputePipeline compute(options);
+	compute.writeFrame(&(buffer[0]), options.frameSize, result, CV_8UC3);
 
 	cv::imwrite(outputName, result);
 

@@ -6,6 +6,7 @@
 namespace Speckle {
 
 typedef cv::Mat_<cv::Vec3b> Mat3b;
+typedef cv::Mat_<cv::Vec4b> Mat4b;
 
 }
 #endif

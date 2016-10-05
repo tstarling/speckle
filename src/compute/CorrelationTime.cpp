@@ -10,8 +10,8 @@ const double CorrelationTime::tablePrecision = 1e-4;
 // table size, but the error is pretty small below 0.05
 const double CorrelationTime::asymptoticThreshold = 0.05;
 
-CorrelationTime::CorrelationTime(int tableSize, double baseline)
-	: m_baseline(baseline),
+CorrelationTime::CorrelationTime(int tableSize, double beta)
+	: m_beta(beta),
 	m_step(1.0 / (tableSize - 1)),
 	m_table(tableSize)
 {
@@ -33,6 +33,7 @@ CorrelationTime::CorrelationTime(int tableSize, double baseline)
 
 double CorrelationTime::compute(ComputePos & pos, double kSq) {
 	double x;
+	kSq /= m_beta;
 	if (kSq < m_step || kSq < asymptoticThreshold) {
 		// The asymptotic approximation is good when k^2 is small
 		x = 1.0 / kSq;
@@ -45,9 +46,8 @@ double CorrelationTime::compute(ComputePos & pos, double kSq) {
 		x = m_table.at(std::round(kSq / m_step));
 		x = doCorrelationIteration(kSq, x);
 	}
-	/* std::printf("\t%g\n", x); */
 
-	return x / m_baseline;
+	return x;
 }
 
 } // namespace

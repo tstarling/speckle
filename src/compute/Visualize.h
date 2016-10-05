@@ -8,20 +8,13 @@ namespace Speckle {
 
 class Visualize {
 public:
-	Visualize(Mat3b & out, int width, int height, double alpha)
-		: m_out(out), m_alpha(alpha)
-	{
-		out.create(height, width);		
-	}
+	Visualize(double minX)
+		: m_minX(minX)
+	{}
 
-	void background(ComputePos & pos, cv::Vec3b color) {
-		m_out.at<cv::Vec3b>(pos.y, pos.x) = color;
-	}
-
-	void foreground(ComputePos & pos, double t);
+	cv::Vec3b compute(ComputePos & pos, double x);
 private:
-	Mat3b & m_out;
-	double m_alpha;
+	double m_minX;
 };
 
 } // namespace

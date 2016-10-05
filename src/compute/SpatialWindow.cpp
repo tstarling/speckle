@@ -73,14 +73,6 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 	}
 
 	if (!valid) {
-		/*
-		std::printf("%d\t%d\t\t\t%d\t%d\t%d\t%d\t%d\t%d\n",
-				pos.x, pos.y,
-				current.value, current.valueSq,
-				current.vertSum, current.vertSumSq,
-				current.horizSum, current.horizSumSq
-				);
-		*/
 		return 0.0;
 	}
 
@@ -94,21 +86,24 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 	} else {
 		kSquared =
 			(double)(
-				m_area * m_area * current.horizSumSq - 
-				m_area * current.horizSum * current.horizSum
-			) / (
-				(m_area - 1) *
-				current.horizSum * current.horizSum
-			);
+				(int64_t)m_area * current.horizSumSq - 
+				(int64_t)current.horizSum * current.horizSum
+			) / (m_area - 1)
+			/ current.horizSum / current.horizSum * m_area;
 	}
 
 	/*
-	std::printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%g",
-			pos.x, pos.y, pos.outX, pos.outY,
-			current.value, current.valueSq,
-				current.vertSum, current.vertSumSq,
-			current.horizSum, current.horizSumSq, kSquared);
+	static int sample = 0;
+	if (sample++ > 100000) {
+		sample = 0;
+		std::printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%g\n",
+				pos.x, pos.y, pos.outX, pos.outY,
+				current.value, current.valueSq,
+					current.vertSum, current.vertSumSq,
+				current.horizSum, current.horizSumSq, kSquared);
+	}
 	*/
+
 	return kSquared;
 }
 

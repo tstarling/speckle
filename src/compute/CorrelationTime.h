@@ -10,11 +10,11 @@ namespace Speckle {
 
 class CorrelationTime {
 public:
-	CorrelationTime(int tableSize, double baseline);
+	CorrelationTime(int tableSize, double beta);
 	double compute(ComputePos & pos, double kSq);
 
 private:
-	double m_baseline;
+	double m_beta;
 	double m_step;
 	std::vector<float> m_table;
 
@@ -22,10 +22,16 @@ private:
 	static const double asymptoticThreshold;
 };
 
+/**
+ * Get k^2/𝛽
+ */
 inline double getKSquared(double x) {
 	return (std::expm1(-2 * x) + 2 * x) / (2 * std::pow(x, 2));
 }
 
+/**
+ * Get (d/dx) (k^2/𝛽)
+ */
 inline double getKSquaredDeriv(double x) {
 	// Used Wolfram Alpha
 	// It would be more efficient to factor out the exp(-2*x), but that is

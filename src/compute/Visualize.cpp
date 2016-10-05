@@ -1,14 +1,15 @@
 #include "compute/Visualize.h"
 #include "compute/ColourMap.h"
 
+#include <iostream>
+
 namespace Speckle {
 
-void Visualize::foreground(ComputePos & pos, double t) {
-	cv::Vec3b & pixel = m_out.at<cv::Vec3b>(pos.outY, pos.outX);
-	int index = cv::saturate_cast<uint8_t>(256. / t);
+cv::Vec3b Visualize::compute(ComputePos & pos, double x) {
+	///std::cout << "x = " << x << std::endl;
+	int index = cv::saturate_cast<uint8_t>(256. * m_minX / x);
 	const uint8_t * rgb = ColourMap::plasma[index];
-	pixel = (pixel * (1 - m_alpha)) +
-		m_alpha * cv::Vec3b(rgb[2], rgb[1], rgb[0]);
+	return cv::Vec3b(rgb[2], rgb[1], rgb[0]);
 }
 
 } // namespace
