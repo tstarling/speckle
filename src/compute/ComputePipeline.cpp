@@ -44,11 +44,11 @@ void ComputePipeline::writeFrame(void *data, size_t length, cv::Mat & output, in
 			}
 			double x = m_correlationTime.compute(pos, kSq);
 			cv::Vec3b c = m_visualize.compute(pos, x);
-			if (format == CV_8UC4) {
+			if (format == CV_8UC3) {
+				mat3->at<cv::Vec3b>(pos.outY, pos.outX) = c;
+			} else {
 				mat4->at<cv::Vec4b>(pos.outY, pos.outX) = cv::Vec4b(
 					c[0], c[1], c[2], 0xff);
-			} else {
-				mat3->at<cv::Vec3b>(pos.outY, pos.outX) = c;
 			}
 		}
 	}
