@@ -18,7 +18,7 @@ public:
 	Unpack(size_t frameSize, int bitsPerPixel)
 		: m_frameSize(frameSize), m_bpp(bitsPerPixel),
 		m_mask((1 << bitsPerPixel) - 1), m_pos(nullptr), m_end(nullptr),
-		m_buffer(0)
+		m_buffer(0), m_bufferSize(0)
 	{
 		if (bitsPerPixel > std::numeric_limits<int>::digits) {
 			throw std::runtime_error("Too many bits per pixel");

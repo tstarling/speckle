@@ -45,14 +45,13 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 	}
 
 	int window = m_window;
-	int halfWindow = (window - 1) / 2;
 	bool valid = true;
 
 	if (y >= window) {
 		PixelStats & top = getBufferEntry(x, y - window);
 		current.vertSum -= top.value;
 		current.vertSumSq -= top.valueSq;
-	} else {
+	} else if (y < window - 1) {
 		valid = false;
 	}
 
@@ -68,7 +67,7 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 		PixelStats & left = getBufferEntry(x - window, y);
 		current.horizSum -= left.vertSum;
 		current.horizSumSq -= left.vertSumSq;
-	} else {
+	} else if (x < window - 1) {
 		valid = false;
 	}
 
@@ -76,6 +75,7 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 		return 0.0;
 	}
 
+	int halfWindow = window / 2; // round down
 	pos.outX = x - halfWindow;
 	pos.outY = y - halfWindow;
 
@@ -92,9 +92,9 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 			/ current.horizSum / current.horizSum * m_area;
 	}
 
-	/*
+#if 0
 	static int sample = 0;
-	if (sample++ > 100000) {
+	if (++sample > 100000) {
 		sample = 0;
 		std::printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%g\n",
 				pos.x, pos.y, pos.outX, pos.outY,
@@ -102,7 +102,7 @@ double SpatialWindow::compute(ComputePos & pos, int value) {
 					current.vertSum, current.vertSumSq,
 				current.horizSum, current.horizSumSq, kSquared);
 	}
-	*/
+#endif
 
 	return kSquared;
 }

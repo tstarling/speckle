@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 set(ENABLE_CAPTURE TRUE CACHE BOOL "Enable the Kinect capture tool")
 set(ENABLE_PROCESS TRUE CACHE BOOL "Enable the command line processing tool")
 set(ENABLE_GUI TRUE CACHE BOOL "Enable the Qt GUI")
+set(ENABLE_TEST TRUE CACHE BOOL "Enable self-testing")
 
 # Global settings
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
@@ -121,4 +122,23 @@ if (ENABLE_GUI)
 	UseThreads(gui)
 	UseSpeckle(gui)
 endif()
+
+# test
+if (ENABLE_TEST)
+	enable_testing()
+	add_executable(test-runner test/test-runner.cpp)
+	UseOpenCV(test-runner)
+	UseSpeckle(test-runner)
+
+	add_test(
+		NAME SpatialWindow
+		COMMAND $<TARGET_FILE:test-runner>
+			SpatialWindow ${CMAKE_CURRENT_SOURCE_DIR}/test/SpatialWindow.tsv)
+
+	add_test(
+		NAME CorrelationTime
+		COMMAND $<TARGET_FILE:test-runner>
+			CorrelationTime ${CMAKE_CURRENT_SOURCE_DIR}/test/CorrelationTime.tsv)
+endif()
+
 

@@ -37,7 +37,6 @@ void ComputePipeline::writeFrame(void *data, size_t length, cv::Mat & output, in
 		for (pos.x = 0; pos.x < m_options.width; pos.x++) {
 			pos.outX = pos.outY = -1;
 			int luminance = m_unpack.compute(pos);
-
 			double kSq = m_spatialWindow.compute(pos, luminance);
 			if (pos.outX == -1) {
 				continue;

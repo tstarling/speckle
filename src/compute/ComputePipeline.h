@@ -19,7 +19,7 @@ public:
 			correlationTableSize(1024),
 			beta(1.0),
 			frameSize(0),
-			minX(30)
+			minX(40)
 		{}
 			
 		int width;

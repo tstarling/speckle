@@ -36,7 +36,7 @@ inline double getKSquaredDeriv(double x) {
 	// Used Wolfram Alpha
 	// It would be more efficient to factor out the exp(-2*x), but that is
 	// inaccurate when x≈0 (i.e. k^2≈1)
-	return ((std::exp(-2 * x) + 1) * x + std::expm1(-2 * x)) / std::pow(x, 3);
+	return - ((std::exp(-2 * x) + 1) * x + std::expm1(-2 * x)) / std::pow(x, 3);
 }
 
 inline double doCorrelationIteration(double kSquared, double x0) {
